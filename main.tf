@@ -28,7 +28,7 @@ resource "aws_internet_gateway" "main" {
     }
   )
 }
-#Resource: aws_subnet
+#Resource: aws_subnet public
 #expense-dev-public-us-east-1a
 resource "aws_subnet" "public" {
   count                   = length(var.public_subnet_cidrs) #this conditon is  for creating multiple subnets
@@ -44,7 +44,7 @@ resource "aws_subnet" "public" {
     }
   )
 }
-
+# private subnet
 resource "aws_subnet" "private" {
   count             = length(var.private_subnet_cidrs) #this conditon is  for creating multiple subnets
   vpc_id            = aws_vpc.main.id
@@ -59,7 +59,7 @@ resource "aws_subnet" "private" {
     }
   )
 }
-
+# database subnet
 resource "aws_subnet" "database" {
   count             = length(var.database_subnet_cidrs) #this conditon is  for creating multiple subnets
   vpc_id            = aws_vpc.main.id
@@ -96,7 +96,7 @@ resource "aws_nat_gateway" "example" {
   # on the Internet Gateway for the VPC.
   depends_on = [aws_internet_gateway.main]
 }
-
+# route table creation for public subnet
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -111,7 +111,7 @@ resource "aws_route_table" "public" {
 }
 
 
-
+#route table creation for private subnet
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
@@ -126,7 +126,7 @@ resource "aws_route_table" "private" {
 }
 
 
-
+#route table creation for database subnet
 resource "aws_route_table" "database" {
   vpc_id = aws_vpc.main.id
 
@@ -140,24 +140,19 @@ resource "aws_route_table" "database" {
   )
 }
 
-#aws route
-# resource "aws_route" "public" {
-#   route_table_id            = aws_route_table.public.id
-#   destination_cidr_block    = "0.0.0.0/0"
-#   vpc_peering_connection_id = aws_internet_gateway.main.id
-# }
+# route table subnet association with public subnet
 resource "aws_route" "public" {
   route_table_id            = aws_route_table.public.id
   destination_cidr_block    = "0.0.0.0/0"
   gateway_id = aws_internet_gateway.main.id # this condition is for routing the traffic to the internet gateway
 }
-
+# route table subnet association with private subnet
 resource "aws_route" "private" {
   route_table_id            = aws_route_table.private.id
   destination_cidr_block    = "0.0.0.0/0"
   nat_gateway_id = aws_nat_gateway.example.id
 }
-
+# route table subnet association with database subnet
 resource "aws_route" "database" {
   route_table_id            = aws_route_table.database.id
   destination_cidr_block    = "0.0.0.0/0"
